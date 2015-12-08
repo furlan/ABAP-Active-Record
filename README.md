@@ -6,3 +6,4 @@ It's to avoid SAP Gateway service just to retrieve some information from ABAP St
 
 ## Actual Version
 The actual version is just a proof of concept and gather feedback.
+1
