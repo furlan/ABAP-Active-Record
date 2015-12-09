@@ -34,10 +34,14 @@ Here is the JSON Model returned my method getJSON():
 
 - only SAP Gateway service
 - use batch processing
-- Two Entity Types, *request* and *result*
+- Two Entity Types, **request** and **result**
 
-1. Call CREATE_ENTITY of *request* to start the proceesing and define some parameters.
-2. For each fiel in the list (i.e. `["CARRID", "CONNID", "FLDATE", "PRICE"]`) call UPDATE_ENTITY of *request* and store all fields to be retrieved.
-3. For each property in the object (i.e. `{carrid: "LH", connid: "2402"}`) call UPDATE_ENTITY of *request* and store all filters to be used in WHERE clause.
-4. At the end of processing, call GET_ENTITYSET of *result* to execute the dynamic SELECT command and return the entityset with a list of all fields.
-5. On the SAPUI5 side, `aarModel` class provide all services, include to translate the format returned from *result* to JSON format.
+1. Call CREATE_ENTITY of **request** to start the proceesing and define some parameters.
+2. For each fiel in the list (i.e. `["CARRID", "CONNID", "FLDATE", "PRICE"]`) call UPDATE_ENTITY of **request** and store all fields to be retrieved.
+3. For each property in the object (i.e. `{carrid: "LH", connid: "2402"}`) call UPDATE_ENTITY of **request** and store all filters to be used in WHERE clause.
+4. At the end of processing, call GET_ENTITYSET of **result** to execute the dynamic SELECT command and return the entityset with a list of all fields.
+5. On the SAPUI5 side, `aarModel` class provide all services, include to translate the format returned from **result** to JSON format.
+
+## Feedback
+
+For questions/comments/bugs/feature requests/wishes please create an [issue](https://github.com/furlan/ABAP-Active-Record/issues).
