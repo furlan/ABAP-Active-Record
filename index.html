@@ -21,11 +21,11 @@
 
 		<script>
 			
-			var aarServiceUri = "<replace with correct URL>";
+			var aarServiceUri = "http://10.0.1.16:50000/sap/opu/odata/SAP/ZABAP_ACTIVE_RECORD_SRV/";
 			
 			var oABAP = new aarModel(aarServiceUri, 'SFLIGHT');
 			
-			oABAP.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});
+			oABAP.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "AA", connid: "0017"});
 			
 			var oJSON = oABAP.getSetJSON();			
 		
