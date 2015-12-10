@@ -45,4 +45,3 @@ Here is the JSON Model returned my method getJSON():
 ## Feedback
 
 For questions/comments/bugs/feature requests/wishes please create an [issue](https://github.com/furlan/ABAP-Active-Record/issues).
-2
