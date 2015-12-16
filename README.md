@@ -1,27 +1,175 @@
 # ABAP-Active-Record
-It's inspired in the Ruby on Rails Active Record.
+Inspired by the Ruby on Rails Active Record, I started to work on an idea to replicate the concept of Active Record in SAPUI5.
 
 ## Motivation
-It's to avoid SAP Gateway service just to retrieve some information from ABAP Stack from SAPUI5.
+Imagine that you need to retreive all records for a given flight from SFLIGHT table. Later in the program you need to retrieve a set of materials from MARA table. Then some company code details from T001 table. Then reservation from SBOOK table. Then deliveries from LIKP table. If you are using SAP Gateway, you need to create a service for each one of those requests.
 
-## Actual Version
-The actual version is just a proof of concept and gather feedback.
+In order to avoid to create a new SAP Gateway service for simple retrieval records from SAP tables, the ABAP Active Record give direct access into the SAP tables in a very simple way.
 
 ## How it works
 
-Create ABAP Active Record objetc:
+Suppose that you need to retreive all records from SFLIGHT table for Lufthansa (LH) and connection 2402:
 
-`var oABAP = new aarModel(aarServiceUri, 'SFLIGHT');`
+In SAPUI5 code create ABAP Active Record object:
 
-Retrieve data set from ABAP Stack, choosing fields and filter
+`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
 
-`oABAP.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
+`aarModel` is a class for all Active Record methods implementation. `aarServiceUri` is a URI for a generic service at SAP Gateway.
 
-Get JSON Model:
+Retrieve data set (JSON) from ABAP Stack, choosing fields and filter
 
-`var oJSON = oABAP.getSetJSON();`
+`var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
-Here is the JSON Model returned my method getJSON():
+Repeat the same procedure for any other SAP table (SPFLI, MAKT, BKPF, T001W etc.)
+
+## CRUD Methods
+It's also allowed to execute all CRUD methods, even in the standard tables.
+
+    Note: It's easy to block update commands in the SAP Gateway class implementation.
+
+### Create
+Create a record at table SFLIGHT:
+
+1. Create ABAP Active Record object:
+
+`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+
+2. Call _create_ method:
+
+`oFlightModel.create({carrid: "LH", connid: "2402", fldate: "20151215", price: "500.00"});`
+
+### Read
+Read a record from table SFLIGHT (select single):
+
+1. Create ABAP Active Record object:
+
+`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+
+2. Call _find_ method:
+
+`var oFlight = oFlightModel.find({carrid: "LH", connid: "2402", fldate: "20151215"});`
+
+_oFlight_ content (JSON):
+
+`{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"...}`
+
+#### Read Simple Value
+
+1. Create ABAP Active Record object:
+
+`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+
+2. Call _getSingleValue_ method:
+
+`var price = oFlightModel.getSingleValue("PRICE", {carrid: "LH", connid: "2402", fldate: "20151215"});`
+
+Value of _PRICE_: "500.00".
+
+### Update
+Update a record in table SFLIGHT:
+
+1. Create ABAP Active Record object:
+
+`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+
+2. Call _update_ method:
+
+`oFlightModel.update({carrid: "LH", connid: "2402", fldate: "20151215", price: "350.00"});`
+
+New value of _PRICE_: "350.00".
+
+### Delete
+Delete a record in table SFLIGHT:
+
+1. Create ABAP Active Record object:
+
+`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+
+2. Call _destroy_ method:
+
+`oFlightModel.destroy({carrid: "LH", connid: "2402", fldate: "20151215");`
+
+Record deleted.
+
+## Under the Hood
+
+### SAP Gateway
+It's only necessary to create one generic service at SAP Gateway that will respond all requests for any table!
+
+There are two entity types: **request** and **result**, with their entity sets. 
+
+- **request** is responsible to receive all information about database operation, like table name, fields to be selected and filter conditions.
+- **result** is responsible to process all information entered using **resquest** calls and execute desired operation.
+
+The whole transation is executed using batch processing. 
+
+`var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
+
+For example, for the _retrieveSet_ method above, it's necessary follow requests:
+- first **request** (POST method) call to pass operation and SAP Table name;
+- 4 **request** (PUT method) calls to pass all 4 fields to be retrieved;
+- 2 **request** (PUT method) calls to pass 2 filter conditions and 
+- last **result** (GET method) call to retrieve all information from database selection.
+
+It's necessary 8 calls in total for this example, in the same transation (batch).
+
+### ABAP
+Here is the list of methods implemented in ABAP in order to process database retrieval:
+
+- REQUESTSET_CREATE_ENTITY
+
+Called in the begginig of all transactions. It's responsible to define the table name and operation.  
+
+- REQUESTSET_UPDATE_ENTITY
+
+Receive all parameters to build dynamic database operation. 
+
+- RESULTSET_CREATE_ENTITY
+
+Used in _create_ method (PUT) and execute INSERT SQL command.
+
+- RESULTSET_DELETE_ENTITY
+
+Used in _destroy_ method (DELETE) and execute DELETE SQL command.
+
+- RESULTSET_GET_ENTITY
+
+Used in _getSingleValue_  and _find_ methods (GET) and execute SELECT SINGLE SQL command.
+
+- RESULTSET_GET_ENTITYSET
+
+Used in _retrieveSet_ method (GET) and execute SELECT SQL command.
+
+- RESULTSET_UPDATE_ENTITY
+
+Used in _update_ method (PUT) and execute UPDATE SQL command.
+
+### Sequence Calls
+
+Just as an example, here is the sequence calls to retrieve a set of records for SFLIGHT table:
+
+`var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
+
+1. Call REQUESTSET_CREATE_ENTITY to start the proceesing and define some parameters.
+2. For each fiel in the list (i.e. `["CARRID", "CONNID", "FLDATE", "PRICE"]`) call REQUESTSET_UPDATE_ENTITY and store all store it in a internal table.
+3. For each property in the object (i.e. `{carrid: "LH", connid: "2402"}`) call REQUESTSET_UPDATE_ENTITY and store all filters to be used in WHERE clause in a internal table.
+4. At the end of processing, call RESULTSET_GET_ENTITYSET to execute a dynamic SELECT command and return the entityset with a list of all fields.
+5. On the SAPUI5 side, `aarModel` class provide all services, include to translate the format returned from **result** entity type to JSON format.
+
+Here is the return of RESULTSET_GET_ENTITYSET:
+
+`<model>SFLIGHT</model>`
+`<field>CARRID</field>`
+`<value>LH</value>`
+`<model>SFLIGHT</model>`
+`<field>CONNID</field>`
+`<value>2402</value>`
+`<model>SFLIGHT</model>`
+`<field>FLDATE</field>`
+`<value>08/21/1997</value>`
+`...`
+
+Here is the JSON Model returned:
 
 `{"SFLIGHT":[`
 `{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"},`
@@ -30,18 +178,7 @@ Here is the JSON Model returned my method getJSON():
 `{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/30/1997","PRICE":"485,00"}`
 `]}`
 
-## Under the Hood
-
-- only SAP Gateway service
-- use batch processing
-- Two Entity Types, **request** and **result**
-
-1. Call CREATE_ENTITY of **request** to start the proceesing and define some parameters.
-2. For each fiel in the list (i.e. `["CARRID", "CONNID", "FLDATE", "PRICE"]`) call UPDATE_ENTITY of **request** and store all fields to be retrieved.
-3. For each property in the object (i.e. `{carrid: "LH", connid: "2402"}`) call UPDATE_ENTITY of **request** and store all filters to be used in WHERE clause.
-4. At the end of processing, call GET_ENTITYSET of **result** to execute the dynamic SELECT command and return the entityset with a list of all fields.
-5. On the SAPUI5 side, `aarModel` class provide all services, include to translate the format returned from **result** to JSON format.
-
 ## Feedback
+I started this project to share my idea and the initial proof of concept. It's not ready to be used in production, but just to give an idea and receive feedback from the community.
 
 For questions/comments/bugs/feature requests/wishes please create an [issue](https://github.com/furlan/ABAP-Active-Record/issues).
