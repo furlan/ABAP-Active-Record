@@ -1,38 +1,42 @@
-class ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT definition
-  public
-  inheriting from ZCL_ZABAP_ACTIVE_RECOR_DPC
-  create public .
+CLASS zcl_zabap_active_recor_dpc_ext DEFINITION
+  PUBLIC
+  INHERITING FROM zcl_zabap_active_recor_dpc
+  CREATE PUBLIC .
 
-public section.
+  PUBLIC SECTION.
 
-  methods /IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_BEGIN
-    redefinition .
-  methods /IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_END
-    redefinition .
-protected section.
+    METHODS /iwbep/if_mgw_core_srv_runtime~changeset_begin
+         REDEFINITION .
+    METHODS /iwbep/if_mgw_core_srv_runtime~changeset_end
+         REDEFINITION .
+  PROTECTED SECTION.
 
-  types:
-    BEGIN OF TY_FILTER,
-          filter_line type c LENGTH 100,
-         end of ty_filter .
-  types:
-    ty_t_filter TYPE TABLE OF ty_filter .
+    TYPES:
+      BEGIN OF ty_filter,
+        filter_line TYPE c LENGTH 100,
+      END OF ty_filter .
+    TYPES:
+      ty_t_filter TYPE TABLE OF ty_filter .
 
-  data MODEL type TABNAME .
-  data FILTER type TY_T_FILTER .
-  data METHOD type CHAR30 .
+    DATA model TYPE tabname .
+    DATA filter TYPE ty_t_filter .
+    DATA method TYPE char30 .
 
-  methods REQUESTSET_CREATE_ENTITY
-    redefinition .
-  methods REQUESTSET_UPDATE_ENTITY
-    redefinition .
-  methods RESULTSET_CREATE_ENTITY
-    redefinition .
-  methods RESULTSET_GET_ENTITYSET
-    redefinition .
-  methods RESULTSET_UPDATE_ENTITY
-    redefinition .
-private section.
+    METHODS requestset_create_entity
+         REDEFINITION .
+    METHODS requestset_update_entity
+         REDEFINITION .
+    METHODS resultset_create_entity
+         REDEFINITION .
+    METHODS resultset_delete_entity
+         REDEFINITION .
+    METHODS resultset_get_entityset
+         REDEFINITION .
+    METHODS resultset_update_entity
+         REDEFINITION .
+    METHODS resultset_get_entity
+         REDEFINITION .
+  PRIVATE SECTION.
 ENDCLASS.
 
 
@@ -44,13 +48,14 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | Instance Public Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->/IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_BEGIN
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IT_OPERATION_INFO              TYPE        /IWBEP/T_MGW_OPERATION_INFO
+* | [--->] IT_CHANGESET_INPUT             TYPE        /IWBEP/IF_MGW_CORE_SRV_RUNTIME=>TY_T_BATCH_REQUEST(optional)
 * | [<-->] CV_DEFER_MODE                  TYPE        XSDBOOLEAN(optional)
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  method /IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_BEGIN.
+  METHOD /iwbep/if_mgw_core_srv_runtime~changeset_begin.
 
-  endmethod.
+  ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
@@ -59,9 +64,9 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  method /IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_END.
+  METHOD /iwbep/if_mgw_core_srv_runtime~changeset_end.
 
-  endmethod.
+  ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
@@ -160,23 +165,21 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
              logic    TYPE c LENGTH 4,
            END OF lty_parameter.
 
-*    FIELD-SYMBOLS: <fs_parameter> TYPE lty_parameter.
     DATA: wa_parameter TYPE lty_parameter.
     FIELD-SYMBOLS <fsym_field> TYPE any.
 
-
-
 * --- parse parameters to WHERE and SET fields
+    DATA:  lv_regex TYPE string VALUE '''|\"'. "'''|\"'.
     LOOP AT  me->filter ASSIGNING <fs_filter>.
       SPLIT <fs_filter> AT space INTO wa_parameter-field wa_parameter-operator wa_parameter-value wa_parameter-logic.
       TRANSLATE wa_parameter-field TO UPPER CASE.
       WRITE wa_parameter-operator TO wa_parameter-operator CENTERED.
       WRITE wa_parameter-logic TO wa_parameter-logic CENTERED.
-
+      REPLACE ALL OCCURRENCES OF REGEX lv_regex IN wa_parameter-value WITH ''.
 
       READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = wa_parameter-field.
       IF sy-subrc EQ 0.
-        ASSIGN COMPONENT sy-index OF STRUCTURE <fsym_warea> TO <fsym_field>.
+        ASSIGN COMPONENT sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
         IF sy-subrc = 0.
           <fsym_field> = wa_parameter-value.
         ELSE.
@@ -187,18 +190,193 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
-* --- all dynamic retrieve
+* --- fill MANDT field
+    READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = 'MANDT'.
+    IF sy-subrc EQ 0.
+      ASSIGN COMPONENT sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
+      IF sy-subrc = 0.
+        <fsym_field> = sy-mandt.
+      ELSE.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+      ENDIF.
+    ENDIF.
+
+* --- all dynamic insert
     TRY.
 
-*        INSERT INTO (me->model) VALUES <fsym_warea>.
-
-*        UPDATE (me->model)
-*        SET (it_fields)
-*        WHERE (it_where).
+        INSERT INTO (me->model) VALUES <fsym_warea>.
 
       CATCH cx_root.
         RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
     ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_DELETE_ENTITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_D(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD resultset_delete_entity.
+    FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
+
+    DATA o_rowtype TYPE REF TO cl_abap_structdescr.
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
+
+    DATA ref_wa TYPE REF TO data.
+    CREATE DATA ref_wa TYPE HANDLE o_rowtype.
+
+    FIELD-SYMBOLS <fsym_warea> TYPE any.
+    ASSIGN ref_wa->* TO <fsym_warea>.
+
+    DATA: it_ddfields TYPE ddfields.
+    FIELD-SYMBOLS: <fs_ddfield> LIKE LINE OF it_ddfields.
+    it_ddfields = o_rowtype->get_ddic_field_list( ).
+
+    TYPES: BEGIN OF lty_parameter,
+             field    TYPE c LENGTH 30,
+             operator TYPE c LENGTH 4,
+             value    TYPE c LENGTH 100,
+             logic    TYPE c LENGTH 4,
+           END OF lty_parameter.
+
+    DATA: wa_parameter TYPE lty_parameter.
+    FIELD-SYMBOLS <fsym_field> TYPE any.
+
+* --- parse parameters to WHERE and SET fields
+    DATA:  lv_regex TYPE string VALUE '''|\"'. "'''|\"'.
+    LOOP AT  me->filter ASSIGNING <fs_filter>.
+      SPLIT <fs_filter> AT space INTO wa_parameter-field wa_parameter-operator wa_parameter-value wa_parameter-logic.
+      TRANSLATE wa_parameter-field TO UPPER CASE.
+      WRITE wa_parameter-operator TO wa_parameter-operator CENTERED.
+      WRITE wa_parameter-logic TO wa_parameter-logic CENTERED.
+      REPLACE ALL OCCURRENCES OF REGEX lv_regex IN wa_parameter-value WITH ''.
+
+      READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = wa_parameter-field.
+      IF sy-subrc EQ 0.
+        ASSIGN COMPONENT sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
+        IF sy-subrc = 0.
+          <fsym_field> = wa_parameter-value.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+        ENDIF.
+      ELSE.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+      ENDIF.
+    ENDLOOP.
+
+* --- fill MANDT field
+    READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = 'MANDT'.
+    IF sy-subrc EQ 0.
+      ASSIGN COMPONENT sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
+      IF sy-subrc = 0.
+        <fsym_field> = sy-mandt.
+      ELSE.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+      ENDIF.
+    ENDIF.
+
+* --- all dynamic delete
+    TRY.
+
+        DELETE (me->model) FROM <fsym_warea>.
+
+      CATCH cx_root.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_GET_ENTITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IO_REQUEST_OBJECT              TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY(optional)
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TS_RESULT
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_ENTITY_CNTXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD resultset_get_entity.
+    FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
+
+    DATA o_rowtype TYPE REF TO cl_abap_structdescr.
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
+
+    DATA ref_wa TYPE REF TO data.
+    CREATE DATA ref_wa TYPE HANDLE o_rowtype.
+
+    FIELD-SYMBOLS <fsym_warea> TYPE any.
+    ASSIGN ref_wa->* TO <fsym_warea>.
+
+    DATA: it_ddfields TYPE ddfields.
+    FIELD-SYMBOLS: <fs_ddfield> LIKE LINE OF it_ddfields.
+    it_ddfields = o_rowtype->get_ddic_field_list( ).
+
+    TYPES: BEGIN OF lty_parameter,
+             field    TYPE c LENGTH 30,
+             operator TYPE c LENGTH 4,
+             value    TYPE c LENGTH 100,
+             logic    TYPE c LENGTH 4,
+           END OF lty_parameter.
+
+    DATA: wa_parameter TYPE lty_parameter.
+    FIELD-SYMBOLS <fsym_field> TYPE any.
+
+    DATA: it_where  TYPE TABLE OF edpline.
+    FIELD-SYMBOLS: <fs_where> TYPE edpline.
+
+* --- parse parameters to WHERE and SET fields
+    LOOP AT  me->filter ASSIGNING <fs_filter> FROM 2.
+
+      APPEND INITIAL LINE TO it_where ASSIGNING <fs_where>.
+      <fs_where> = <fs_filter>.
+
+      AT LAST.
+        EXIT.
+      ENDAT.
+
+      CONCATENATE <fs_where> 'AND' INTO <fs_where> SEPARATED BY space.
+
+    ENDLOOP.
+
+* --- all dynamic retrieve
+    TRY.
+
+        SELECT SINGLE * FROM (me->model) INTO <fsym_warea> WHERE (it_where).
+        IF sy-subrc NE 0.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception.
+        ENDIF.
+
+      CATCH cx_root.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+    ENDTRY.
+
+* --- write oDATA output
+    READ TABLE me->filter ASSIGNING <fs_filter> INDEX 1.
+    READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = <fs_filter>.
+    ASSIGN COMPONENT  sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+    ELSE.
+      er_entity-model = me->model.
+      er_entity-field = <fs_ddfield>-fieldname.
+      er_entity-value = <fsym_field>.
+      SHIFT er_entity-value LEFT DELETING LEADING space.
+    ENDIF.
+
   ENDMETHOD.
 
 
@@ -233,9 +411,9 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
              logic    TYPE c LENGTH 4,
            END OF lty_parameter.
 
-    DATA: it_fields TYPE TABLE OF lty_parameter, "edpline.
-          it_where  TYPE TABLE OF lty_parameter. "edpline.
-    FIELD-SYMBOLS: <fs_parameter> TYPE lty_parameter. "edpline.
+    DATA: it_fields TYPE TABLE OF lty_parameter,
+          it_where  TYPE TABLE OF lty_parameter.
+    FIELD-SYMBOLS: <fs_parameter> TYPE lty_parameter.
     DATA: wa_parameter TYPE lty_parameter.
 
     TYPE-POOLS : abap.
@@ -352,105 +530,74 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  method RESULTSET_UPDATE_ENTITY.
+  METHOD resultset_update_entity.
 
-*    FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
-*
-*    TYPES: BEGIN OF lty_parameter,
-*             field    TYPE c LENGTH 30,
-*             operator TYPE c LENGTH 4,
-*             value    TYPE c LENGTH 100,
-*             logic    TYPE c LENGTH 4,
-*           END OF lty_parameter.
-*
-*    DATA: it_fields TYPE TABLE OF lty_parameter, "edpline.
-*          it_where  TYPE TABLE OF lty_parameter. "edpline.
-*    FIELD-SYMBOLS: <fs_parameter> TYPE lty_parameter. "edpline.
-*    DATA: wa_parameter TYPE lty_parameter.
-*
-*
-*    DATA : ref_wa TYPE REF TO cl_abap_structdescr.
-*    ref_wa ?= cl_abap_typedescr=>describe_by_name( me->model ).
-*    DATA: it_ddfields TYPE ddfields.
-*    FIELD-SYMBOLS: <fs_ddfield> LIKE LINE OF it_ddfields.
-*    it_ddfields = ref_wa->get_ddic_field_list( ).
-*
-*
-*    FIELD-SYMBOLS:
-*      <fs_wa>    TYPE any,
-*      <fs_field> TYPE any.
-*
-*    CREATE DATA ref_wa TYPE HANDLE ref_rowtype.
-*    ASSIGN ref_wa->* TO <fs_wa>.
-*
-*
-** --- parse parameters to WHERE and SET fields
-*    LOOP AT  me->filter ASSIGNING <fs_filter>.
-*      SPLIT <fs_filter> AT space INTO wa_parameter-field wa_parameter-operator wa_parameter-value wa_parameter-logic.
-*      TRANSLATE wa_parameter-field TO UPPER CASE.
-*      WRITE wa_parameter-operator TO wa_parameter-operator CENTERED.
-*      WRITE wa_parameter-logic TO wa_parameter-logic CENTERED.
-*
-*      READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = wa_parameter-field.
-*      IF sy-subrc EQ 0.
-*        ASSIGN COMPONENT sy-index OF STRUCTURE <fs_wa> TO <fs_field>.
-*        IF sy-subrc = 0.
-*          <fs_field> = wa_parameter-value.
-*         ENDIF.
-*        IF <fs_ddfield>-keyflag EQ 'X' AND <fs_ddfield>-fieldname NE 'MANDT'.
-*          APPEND wa_parameter TO it_where.
-*        ELSE.
-*          APPEND wa_parameter TO it_fields.
-*        ENDIF.
-*        ELSE.
-*          RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
-*        ENDIF.
-*      ENDIF.
-*    ENDLOOP.
+    FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
 
-* --- check if WHERE condition have full key
-*    LOOP AT it_ddfields ASSIGNING <fs_ddfield>.
-*      CHECK <fs_ddfield>-keyflag IS NOT INITIAL AND <fs_ddfield>-fieldname NE 'MANDT'.
-*      READ TABLE it_where ASSIGNING <fs_parameter> WITH KEY field = <fs_ddfield>-fieldname.
-*      IF sy-subrc NE 0.
-*        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
-*      ENDIF.
-*    ENDLOOP.
+    DATA o_rowtype TYPE REF TO cl_abap_structdescr.
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
 
-* --- add logic into the WHERE condition
-*    LOOP AT it_where ASSIGNING <fs_parameter>.
-*      AT LAST.
-*        CLEAR <fs_parameter>-logic.
-*        EXIT.
-*      ENDAT.
-*      IF <fs_parameter>-logic IS INITIAL.
-*        <fs_parameter>-logic = ' AND'.
-*      ENDIF.
-*    ENDLOOP.
+    DATA ref_wa TYPE REF TO data.
+    CREATE DATA ref_wa TYPE HANDLE o_rowtype.
 
+    FIELD-SYMBOLS <fsym_warea> TYPE any.
+    ASSIGN ref_wa->* TO <fsym_warea>.
 
+    DATA: it_ddfields TYPE ddfields.
+    FIELD-SYMBOLS: <fs_ddfield> LIKE LINE OF it_ddfields.
+    it_ddfields = o_rowtype->get_ddic_field_list( ).
 
+    TYPES: BEGIN OF lty_parameter,
+             field    TYPE c LENGTH 30,
+             operator TYPE c LENGTH 4,
+             value    TYPE c LENGTH 100,
+             logic    TYPE c LENGTH 4,
+           END OF lty_parameter.
 
-*    DATA : idetails TYPE abap_compdescr_tab.
-*    FIELD-SYMBOLS: <fs_detail> TYPE abap_compdescr.
-*
-*    idetails[] = ref_rowtype->components[].
+    DATA: wa_parameter TYPE lty_parameter.
+    FIELD-SYMBOLS <fsym_field> TYPE any.
 
+* --- parse parameters to WHERE and SET fields
+    DATA:  lv_regex TYPE string VALUE '''|\"'. "'''|\"'.
+    LOOP AT  me->filter ASSIGNING <fs_filter>.
+      SPLIT <fs_filter> AT space INTO wa_parameter-field wa_parameter-operator wa_parameter-value wa_parameter-logic.
+      TRANSLATE wa_parameter-field TO UPPER CASE.
+      WRITE wa_parameter-operator TO wa_parameter-operator CENTERED.
+      WRITE wa_parameter-logic TO wa_parameter-logic CENTERED.
+      REPLACE ALL OCCURRENCES OF REGEX lv_regex IN wa_parameter-value WITH ''.
 
+      READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = wa_parameter-field.
+      IF sy-subrc EQ 0.
+        ASSIGN COMPONENT sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
+        IF sy-subrc = 0.
+          <fsym_field> = wa_parameter-value.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+        ENDIF.
+      ELSE.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+      ENDIF.
+    ENDLOOP.
 
+* --- fill MANDT field
+    READ TABLE it_ddfields ASSIGNING <fs_ddfield> WITH KEY fieldname = 'MANDT'.
+    IF sy-subrc EQ 0.
+      ASSIGN COMPONENT sy-tabix OF STRUCTURE <fsym_warea> TO <fsym_field>.
+      IF sy-subrc = 0.
+        <fsym_field> = sy-mandt.
+      ELSE.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+      ENDIF.
+    ENDIF.
 
+* --- all dynamic update
+    TRY.
 
-* --- all dynamic retrieve
-*    TRY.
-*
-*        INSERT INTO (me->model) VALUES <fs_wa>.
-*
-**        UPDATE (me->model)
-**        SET (it_fields)
-**        WHERE (it_where).
-*
-*      CATCH cx_root.
-*        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
-*    ENDTRY.
-  endmethod.
+        UPDATE (me->model) FROM <fsym_warea>.
+
+      CATCH cx_root.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
+    ENDTRY.
+
+  ENDMETHOD.
 ENDCLASS.
