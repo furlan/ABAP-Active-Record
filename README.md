@@ -30,22 +30,22 @@ It's also allowed to execute all CRUD methods, even in the standard tables.
 ### Create
 Create a record at table SFLIGHT:
 
-1. Create ABAP Active Record object:
+- Create ABAP Active Record object:
 
 `var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
 
-2. Call _create_ method:
+- Call _create_ method:
 
 `oFlightModel.create({carrid: "LH", connid: "2402", fldate: "20151215", price: "500.00"});`
 
 ### Read
 Read a record from table SFLIGHT (select single):
 
-1. Create ABAP Active Record object:
+- Create ABAP Active Record object:
 
 `var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
 
-2. Call _find_ method:
+- Call _find_ method:
 
 `var oFlight = oFlightModel.find({carrid: "LH", connid: "2402", fldate: "20151215"});`
 
@@ -55,11 +55,11 @@ _oFlight_ content (JSON):
 
 #### Read Simple Value
 
-1. Create ABAP Active Record object:
+- Create ABAP Active Record object:
 
 `var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
 
-2. Call _getSingleValue_ method:
+- Call _getSingleValue_ method:
 
 `var price = oFlightModel.getSingleValue("PRICE", {carrid: "LH", connid: "2402", fldate: "20151215"});`
 
@@ -68,11 +68,11 @@ Value of _PRICE_: "500.00".
 ### Update
 Update a record in table SFLIGHT:
 
-1. Create ABAP Active Record object:
+- Create ABAP Active Record object:
 
 `var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
 
-2. Call _update_ method:
+- Call _update_ method:
 
 `oFlightModel.update({carrid: "LH", connid: "2402", fldate: "20151215", price: "350.00"});`
 
@@ -81,11 +81,11 @@ New value of _PRICE_: "350.00".
 ### Delete
 Delete a record in table SFLIGHT:
 
-1. Create ABAP Active Record object:
+- Create ABAP Active Record object:
 
 `var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
 
-2. Call _destroy_ method:
+- Call _destroy_ method:
 
 `oFlightModel.destroy({carrid: "LH", connid: "2402", fldate: "20151215");`
 
