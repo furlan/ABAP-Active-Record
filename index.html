@@ -21,11 +21,11 @@
 
 		<script>
 			
-			var aarServiceUri = "http://10.0.1.16:50000/sap/opu/odata/SAP/ZABAP_ACTIVE_RECORD_SRV/";
+			var aarServiceUri = "http://ddadb041.ctr.globedev.ddc:8002/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV";
 			
 			var oABAP = new aarModel(aarServiceUri, 'SFLIGHT');
 			
-			oABAP.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "AA", connid: "0017"});
+			oABAP.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});
 			
 			var oJSON = oABAP.getSetJSON();			
 		
@@ -49,6 +49,19 @@
 			oTable.setModel(oJSON);
 			oTable.bindRows("/" + oABAP.getModel());
 			oTable.placeAt("content");
+			
+			
+			var oCreate = new sap.ui.commons.Button({
+				text: "New Flight",
+				press: function() {
+					var oFlight = new aarModel(aarServiceUri, 'SFLIGHT');
+					oFlight.create({carrid: "LH", connid: "2402", fldate: "20151215", price: "500.00"});
+					//oFlight.save(); // ????
+				},
+			});
+			
+			oCreate.placeAt("content");
+			
 			
 			
 		</script>

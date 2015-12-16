@@ -21,8 +21,8 @@ aarModel.prototype.retrieveSet = function(fieldsList,filterCondition) {
 	var addBatchChanges = []; 
 	var oEntry = {};
 	
-	oEntry.model = this.aarModel;		
-	oEntry.method = "get_set";		
+	oEntry.model = this.aarModel;
+	oEntry.method = "retrieveSet";
 	batchChanges.push( this.oData.createBatchOperation( "requestSet", "POST", oEntry));
 	
 	for (i = 0; i < fieldsList.length; i++) {
@@ -52,7 +52,7 @@ aarModel.prototype.retrieveSet = function(fieldsList,filterCondition) {
 		
 		if	(i < whereConditions.length - 1) {
 			
-			oEntry.parameters += " AND";
+			//oEntry.parameters += " AND";
 			
 		};
 		
@@ -121,6 +121,64 @@ aarModel.prototype.getSetJSON = function() {
 	oJSON.setData(oModel);
 	
 	return oJSON;
+	
+};
+
+aarModel.prototype.create = function(fieldsValues) {
+	console.log("create");
+	
+	var batchChanges = []; 
+	var addBatchChanges = []; 
+	var oEntry = {};
+	
+	this.oData.clearBatch();
+	
+	oEntry.model = this.aarModel;
+	oEntry.method = "create";
+	batchChanges.push( this.oData.createBatchOperation( "requestSet", "POST", oEntry));
+	
+    var field;
+	
+	var whereConditions = [];
+	
+	for (field in fieldsValues) {
+		//whereConditions.push(field + " = '" + fieldsValues[field] + "'");
+		
+		oEntry = {};
+		
+		oEntry.parameters = field + " = '" + fieldsValues[field] + "'";	
+		
+		batchChanges.push( this.oData.createBatchOperation( "requestSet('')", "PUT", oEntry));
+		
+	};
+	
+	oEntry = {};
+	oEntry.model = this.aarModel;
+	batchChanges.push(this.oData.createBatchOperation( "resultSet", "POST", oEntry));
+	
+	//addBatchChanges.push(this.oData.createBatchOperation( "resultSet?$format=json", "POST", oEntry));
+	//addBatchChanges.push(oData.createBatchOperation( "resultSet", "GET"));
+	
+	this.oData.addBatchChangeOperations(batchChanges);
+	
+	//this.oData.addBatchReadOperations(addBatchChanges);
+
+	this.oData.setUseBatch(true);
+	//oData.setHeaders({"Content-Type" : "multipart/mixed;boundary=batch"});
+	this.oData.setHeaders({"Content-Type" : "application/http"});
+			
+	this.oData.submitBatch(
+		function(oDataResponse,oResponse,aErrorResponses){  // Success
+			//sap.ui.getCore().getModel("aarJSON").setJSON(oDataResponse.__batchResponses[1].body); 		
+			console.log("json");
+		},
+		
+		function(oError){           // Error
+			
+			sap.ui.commons.MessageBox.alert("Batch update error!") ;
+		} ,
+		false      // synchronous
+	);
 	
 	
 };
