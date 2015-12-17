@@ -3,7 +3,7 @@
 	<head>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'/>
-		<title>ABAP Active Record Demo - v.1</title>
+		<title>ABAP Active Record Demo - v.1.0</title>
 
 		<script 
 				src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
@@ -21,7 +21,7 @@
 
 		<script>
 			
-			var aarServiceUri = "http://serversap/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV";
+			var aarServiceUri = "http://abap101.ddns.net:50000/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV";
 			
 			var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
 			
@@ -63,7 +63,8 @@
 			
 			
 			var oFormRead = new sap.ui.layout.form.SimpleForm({
-			title: "Read Price",
+				width: "1000px",
+				title: "Read Price",
 				content: [
 					new sap.ui.commons.Label({text: "Airline ID:"}), 
 				    new sap.ui.commons.TextField("carrid", {value: "LH"}), 
@@ -93,6 +94,7 @@
 			oFormRead.placeAt("content");
 			
 			var oForm = new sap.ui.layout.form.SimpleForm({
+				width: "1000px",
 				title: "Change Price",
 				content: [
 					new sap.ui.commons.Label("newPriceLabel", {text: "New Price:"}), 
@@ -128,7 +130,7 @@
 
 	</head>
 	<body class="sapUiBody" role="application">
-		<h1>ABAP Active Record (abapar.js) Demo</h1>
+		<h1>ABAP Active Record (abapar.js) Demo - v.1.0</h1>
 		<div id="content"></div>
 	</body>
 </html>
