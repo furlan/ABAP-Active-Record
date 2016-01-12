@@ -5,7 +5,7 @@
 		<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'/>
 		<title>ABAP Active Record Demo - v.1.0</title>
 
-		<script 
+		<script
 				src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
 				id="sap-ui-bootstrap"
 				data-sap-ui-libs="sap.ui.commons, sap.ui.table"
@@ -14,43 +14,49 @@
 				data-sap-ui-language="en">
 		</script>
 		<!-- add sap.ui.table,sap.ui.ux3 and/or other libraries to 'data-sap-ui-libs' if required -->
-		
-		<script 
+
+		<script
 				src="abapar.js"/>
 		</script>
 
 		<script>
-			
+            sap.ui.require(['./aarModel'], function(aarModel) {
+
+                  // instantiate a Something and call foo() on it
+                    //new Something().foo();
+                    
+
+                });
 			var aarServiceUri = "http://abap101.ddns.net:50000/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV";
-			
+
 			var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
-			
+
 			var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});
-		
+
 			var oTable  = new sap.ui.table.Table({
 				title: "Display Table: " + oFlightModel.getModel(),
 				width: "1000px",
 				visibleRowCount: 10
 			});
-			
-			
+
+
 			var fieldName = "";
 			for (fieldName in oFlightsTable.getProperty("/" + oFlightModel.getModel() + "/0")) {
-				
+
 				oTable.addColumn(new sap.ui.table.Column({
 					label: new sap.ui.commons.Label({text: fieldName}),
 					template: new sap.ui.commons.TextField().bindProperty("value", fieldName),
 				}));
-				
+
 			};
-			
+
 
 			oTable.setModel(oFlightsTable);
 			oTable.bindRows("/" + oFlightModel.getModel());
 			oTable.placeAt("content");
-			
-			
-			
+
+
+
 			var oCreate = new sap.ui.commons.Button({
 				text: "New Flight",
 				press: function() {
@@ -58,48 +64,48 @@
 					oFlightModel.create({carrid: "LH", connid: "2402", fldate: "20151215", price: "500.00"});
 				},
 			});
-			
+
 			oCreate.placeAt("content");
-			
-			
+
+
 			var oFormRead = new sap.ui.layout.form.SimpleForm({
 				width: "1000px",
 				title: "Read Price",
 				content: [
-					new sap.ui.commons.Label({text: "Airline ID:"}), 
-				    new sap.ui.commons.TextField("carrid", {value: "LH"}), 
-					new sap.ui.commons.Label({text: "Connection ID:"}), 
-				    new sap.ui.commons.TextField("connid", {value: "2402"}), 
-					new sap.ui.commons.Label({text: "Flight Date:"}), 
-				    new sap.ui.commons.TextField("fldate", {value: "20151215"}), 
-					new sap.ui.commons.Label({text: "Price:"}), 
-				    new sap.ui.commons.TextField("price", {editable: false}), 
-					new sap.ui.commons.Label({text: ""}), 
+					new sap.ui.commons.Label({text: "Airline ID:"}),
+				    new sap.ui.commons.TextField("carrid", {value: "LH"}),
+					new sap.ui.commons.Label({text: "Connection ID:"}),
+				    new sap.ui.commons.TextField("connid", {value: "2402"}),
+					new sap.ui.commons.Label({text: "Flight Date:"}),
+				    new sap.ui.commons.TextField("fldate", {value: "20151215"}),
+					new sap.ui.commons.Label({text: "Price:"}),
+				    new sap.ui.commons.TextField("price", {editable: false}),
+					new sap.ui.commons.Label({text: ""}),
 					new sap.ui.commons.Button({
 						text: "Read",
 						press: function() {
 							var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
 							var value = oFlightModel.getSingleValue("PRICE", {
-								carrid: sap.ui.getCore().byId("carrid").getValue(), 
-								connid: sap.ui.getCore().byId("connid").getValue(), 
+								carrid: sap.ui.getCore().byId("carrid").getValue(),
+								connid: sap.ui.getCore().byId("connid").getValue(),
 								fldate: sap.ui.getCore().byId("fldate").getValue()
 							});
 						sap.ui.getCore().byId("price").setValue(value)	;
 						},
 					}),
 				]
-			
+
 			})
-			
+
 			oFormRead.placeAt("content");
-			
+
 			var oForm = new sap.ui.layout.form.SimpleForm({
 				width: "1000px",
 				title: "Change Price",
 				content: [
-					new sap.ui.commons.Label("newPriceLabel", {text: "New Price:"}), 
-				    new sap.ui.commons.TextField("newPrice"), 
-					new sap.ui.commons.Label({text: ""}), 
+					new sap.ui.commons.Label("newPriceLabel", {text: "New Price:"}),
+				    new sap.ui.commons.TextField("newPrice"),
+					new sap.ui.commons.Label({text: ""}),
 					new sap.ui.commons.Button({
 						text: "Change",
 						press: function() {
@@ -108,13 +114,13 @@
 						},
 					}),
 				]
-			
+
 			})
-						
+
 			oForm.placeAt("content");
-			
-			
-			
+
+
+
 			var oDelete = new sap.ui.commons.Button({
 				text: "Delete Flight",
 				press: function() {
@@ -122,10 +128,10 @@
 					oFlightModel.destroy({carrid: "LH", connid: "2402", fldate: "20151215"});
 				},
 			});
-			
+
 			oDelete.placeAt("content");
-			
-			
+
+
 		</script>
 
 	</head>
