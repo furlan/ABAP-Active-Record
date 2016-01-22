@@ -1,7 +1,9 @@
 # ABAP-Active-Record
+
 Inspired by the Ruby on Rails Active Record, I started to work on an idea to replicate the concept of Active Record in SAPUI5.
 
 ## Motivation
+
 Imagine that you need to retreive all records for a given flight from SFLIGHT table. Later in the program you need to retrieve a set of materials from MARA table. Then some company code details from T001 table. Then reservation from SBOOK table. Then deliveries from LIKP table. If you are using SAP Gateway, you need to create a service for each one of those requests.
 
 In order to avoid to create a new SAP Gateway service for simple retrieval records from SAP tables, the ABAP Active Record give direct access into the SAP tables in a very simple way.
@@ -10,84 +12,65 @@ In order to avoid to create a new SAP Gateway service for simple retrieval recor
 
 Suppose that you need to retreive all records from SFLIGHT table for Lufthansa (LH) and connection 2402:
 
-In SAPUI5 code create ABAP Active Record object:
+First, in SAPUI5 code create ABAP Active Record object:
 
-`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+`var oARModel = new abapActiveRecord.ARModel();`
 
-`aarModel` is a class for all Active Record methods implementation. `aarServiceUri` is a URI for a generic service at SAP Gateway.
+Then, retrieve a data set (JSON) from ABAP Stack, choosing table, fields and filter
 
-Retrieve data set (JSON) from ABAP Stack, choosing fields and filter
-
-`var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
+`var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
 Repeat the same procedure for any other SAP table (SPFLI, MAKT, BKPF, T001W etc.)
 
 ## CRUD Methods
+
 It's also allowed to execute all CRUD methods, even in the standard tables.
 
     Note: It's easy to block update commands in the SAP Gateway class implementation.
 
 ### Create
+
 Create a record at table SFLIGHT:
 
-- Create ABAP Active Record object:
+`oARModel.aarCreate('SFLIGHT', {carrid: "LH", connid: "2402", fldate: "20160119", price: "500.00"});`
 
-`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
+### Read (set of records)
 
-- Call _create_ method:
+Retrieve a set of records:
 
-`oFlightModel.create({carrid: "LH", connid: "2402", fldate: "20151215", price: "500.00"});`
+`var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
-### Read
-Read a record from table SFLIGHT (select single):
+The JSON model will be like bellow:
 
-- Create ABAP Active Record object:
+`oFlightsTable.getProperty('/')`
 
-`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
-
-- Call _find_ method:
-
-`var oFlight = oFlightModel.find({carrid: "LH", connid: "2402", fldate: "20151215"});`
-
-_oFlight_ content (JSON):
-
-`{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"...}`
+`"{"SFLIGHT":[{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"}, ... ]}"`
 
 #### Read Simple Value
 
-- Create ABAP Active Record object:
+Read a single value from a specific record at table SFLIGHT (select single):
 
-`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
-
-- Call _getSingleValue_ method:
-
-`var price = oFlightModel.getSingleValue("PRICE", {carrid: "LH", connid: "2402", fldate: "20151215"});`
+`var value = oARModel.aarGetEntity("SFLIGHT", "PRICE", {`
+								`carrid: sap.ui.getCore().byId("carrid").getValue(),` 
+								`connid: sap.ui.getCore().byId("connid").getValue(),` 
+								`fldate: sap.ui.getCore().byId("fldate").getValue()`
+							`});`
 
 Value of _PRICE_: "500.00".
 
 ### Update
+
 Update a record in table SFLIGHT:
 
-- Create ABAP Active Record object:
-
-`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
-
-- Call _update_ method:
-
-`oFlightModel.update({carrid: "LH", connid: "2402", fldate: "20151215", price: "350.00"});`
+`oARModel.aarUpdate("SFLIGHT", {carrid: "LH", connid: "2402", fldate: "20160119", price: "350.00"});`
 
 New value of _PRICE_: "350.00".
 
 ### Delete
+
 Delete a record in table SFLIGHT:
 
-- Create ABAP Active Record object:
-
-`var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');`
-
-- Call _destroy_ method:
-
-`oFlightModel.destroy({carrid: "LH", connid: "2402", fldate: "20151215");`
+`oARModel.aarDelete('SFLIGHT', {carrid: "LH", connid: "2402", fldate: "20160119"});`
 
 Record deleted.
 
@@ -103,60 +86,17 @@ There are two entity types: **request** and **result**, with their entity sets.
 
 The whole transation is executed using batch processing. 
 
-`var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
+`var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
-For example, for the _retrieveSet_ method above, it's necessary follow requests:
+For example, for the _aarGetEntitySet_ method above, it's necessary follow requests:
 - first **request** (POST method) call to pass operation and SAP Table name;
 - 4 **request** (PUT method) calls to pass all 4 fields to be retrieved;
 - 2 **request** (PUT method) calls to pass 2 filter conditions and 
 - last **result** (GET method) call to retrieve all information from database selection.
 
-It's necessary 8 calls in total for this example, in the same transation (batch).
+It's necessary 8 calls in total for this example, in the same transaction (batch).
 
-### ABAP
-Here is the list of methods implemented in ABAP in order to process database retrieval:
-
-- REQUESTSET_CREATE_ENTITY
-
-Called in the begginig of all transactions. It's responsible to define the table name and operation.  
-
-- REQUESTSET_UPDATE_ENTITY
-
-Receive all parameters to build dynamic database operation. 
-
-- RESULTSET_CREATE_ENTITY
-
-Used in _create_ method (PUT) and execute INSERT SQL command.
-
-- RESULTSET_DELETE_ENTITY
-
-Used in _destroy_ method (DELETE) and execute DELETE SQL command.
-
-- RESULTSET_GET_ENTITY
-
-Used in _getSingleValue_  and _find_ methods (GET) and execute SELECT SINGLE SQL command.
-
-- RESULTSET_GET_ENTITYSET
-
-Used in _retrieveSet_ method (GET) and execute SELECT SQL command.
-
-- RESULTSET_UPDATE_ENTITY
-
-Used in _update_ method (PUT) and execute UPDATE SQL command.
-
-### Sequence Calls
-
-Just as an example, here is the sequence calls to retrieve a set of records for SFLIGHT table:
-
-`var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
-
-1. Call REQUESTSET_CREATE_ENTITY to start the proceesing and define some parameters.
-2. For each fiel in the list (i.e. `["CARRID", "CONNID", "FLDATE", "PRICE"]`) call REQUESTSET_UPDATE_ENTITY and store all store it in a internal table.
-3. For each property in the object (i.e. `{carrid: "LH", connid: "2402"}`) call REQUESTSET_UPDATE_ENTITY and store all filters to be used in WHERE clause in a internal table.
-4. At the end of processing, call RESULTSET_GET_ENTITYSET to execute a dynamic SELECT command and return the entityset with a list of all fields.
-5. On the SAPUI5 side, `aarModel` class provide all services, include to translate the format returned from **result** entity type to JSON format.
-
-Here is the return of RESULTSET_GET_ENTITYSET:
+Here is the return of **result** entity set method:
 
 `<model>SFLIGHT</model>`
 `<field>CARRID</field>`
@@ -169,7 +109,7 @@ Here is the return of RESULTSET_GET_ENTITYSET:
 `<value>08/21/1997</value>`
 `...`
 
-Here is the JSON Model returned:
+Here is the JSON Model returned by ABAP Active Record:
 
 `{"SFLIGHT":[`
 `{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"},`
@@ -178,7 +118,52 @@ Here is the JSON Model returned:
 `{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/30/1997","PRICE":"485,00"}`
 `]}`
 
+### ABAP
+
+Here is the list of methods implemented in ABAP in order to process database retrieval:
+
+- REQUESTSET_CREATE_ENTITY
+
+Called in the begginig of all transactions. It's responsible to define the table name and operation.  
+
+- REQUESTSET_UPDATE_ENTITY
+
+Receive all parameters to build dynamic database operation. 
+
+- RESULTSET_CREATE_ENTITY
+
+Used in _aarCreate_ method (PUT) and execute INSERT SQL command.
+
+- RESULTSET_DELETE_ENTITY
+
+Used in _aarDelete_ method (DELETE) and execute DELETE SQL command.
+
+- RESULTSET_GET_ENTITY
+
+Used in _aarGetEntity_ method (GET) and execute SELECT SINGLE SQL command.
+
+- RESULTSET_GET_ENTITYSET
+
+Used in _aarGetEntitySet_ method (GET) and execute SELECT SQL command.
+
+- RESULTSET_UPDATE_ENTITY
+
+Used in _aarUpdate_ method (PUT) and execute UPDATE SQL command.
+
+### Sequence Calls
+
+Just as an example, here is the sequence calls to retrieve a set of records for SFLIGHT table:
+
+`var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
+
+1. Call REQUESTSET_CREATE_ENTITY to start the proceesing and define some parameters.
+2. For each field in the list (i.e. `["CARRID", "CONNID", "FLDATE", "PRICE"]`) call REQUESTSET_UPDATE_ENTITY and store all store it in a internal table.
+3. For each property in the object (i.e. `{carrid: "LH", connid: "2402"}`) call REQUESTSET_UPDATE_ENTITY and store all filters to be used in WHERE clause in a internal table.
+4. At the end of processing, call RESULTSET_GET_ENTITYSET to execute a dynamic SELECT command and return the entityset with a list of all fields.
+5. On the SAPUI5 side, `ARModel` class provide all services, include to translate the format returned from **result** entity type to JSON format.
+
 ## Feedback
+
 I started this project to share my idea and the initial proof of concept. It's not ready to be used in production, but just to give an idea and receive feedback from the community.
 
 For questions/comments/bugs/feature requests/wishes please create an [issue](https://github.com/furlan/ABAP-Active-Record/issues).

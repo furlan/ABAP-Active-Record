@@ -18,7 +18,7 @@ CLASS zcl_zabap_active_recor_dpc_ext DEFINITION
     TYPES:
       ty_t_filter TYPE TABLE OF ty_filter .
 
-    DATA model TYPE tabname .
+    DATA ddic_table TYPE tabname .
     DATA filter TYPE ty_t_filter .
     DATA method TYPE char30 .
 
@@ -30,11 +30,11 @@ CLASS zcl_zabap_active_recor_dpc_ext DEFINITION
          REDEFINITION .
     METHODS resultset_delete_entity
          REDEFINITION .
+    METHODS resultset_get_entity
+         REDEFINITION .
     METHODS resultset_get_entityset
          REDEFINITION .
     METHODS resultset_update_entity
-         REDEFINITION .
-    METHODS resultset_get_entity
          REDEFINITION .
   PRIVATE SECTION.
 ENDCLASS.
@@ -43,9 +43,8 @@ ENDCLASS.
 
 CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
-
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->/IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_BEGIN
+* | Instance Public Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->/IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_BEGIN
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IT_OPERATION_INFO              TYPE        /IWBEP/T_MGW_OPERATION_INFO
 * | [--->] IT_CHANGESET_INPUT             TYPE        /IWBEP/IF_MGW_CORE_SRV_RUNTIME=>TY_T_BATCH_REQUEST(optional)
@@ -59,7 +58,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->/IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_END
+* | Instance Public Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->/IWBEP/IF_MGW_CORE_SRV_RUNTIME~CHANGESET_END
 * +-------------------------------------------------------------------------------------------------+
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
@@ -70,7 +69,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->REQUESTSET_CREATE_ENTITY
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->REQUESTSET_CREATE_ENTITY
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -79,7 +78,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_C(optional)
 * | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
 * | [--->] IO_DATA_PROVIDER               TYPE REF TO /IWBEP/IF_MGW_ENTRY_PROVIDER(optional)
-* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TS_REQUEST
+* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RE_01_MPC=>TS_REQUEST
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -91,14 +90,14 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
     er_entity = ls_request_input_data.
 
-    me->model = ls_request_input_data-model.
+    me->ddic_table = ls_request_input_data-ddic_table.
     me->method = ls_request_input_data-method.
 
   ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->REQUESTSET_UPDATE_ENTITY
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->REQUESTSET_UPDATE_ENTITY
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -107,7 +106,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_U(optional)
 * | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
 * | [--->] IO_DATA_PROVIDER               TYPE REF TO /IWBEP/IF_MGW_ENTRY_PROVIDER(optional)
-* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TS_REQUEST
+* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RE_01_MPC=>TS_REQUEST
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -121,14 +120,14 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
 
     APPEND INITIAL LINE TO me->filter ASSIGNING <fs_filter>.
-    <fs_filter>-filter_line = ls_request_input_data-parameters.
+    <fs_filter>-filter_line = ls_request_input_data-parameter.
 
 
   ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_CREATE_ENTITY
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->RESULTSET_CREATE_ENTITY
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -137,7 +136,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_C(optional)
 * | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
 * | [--->] IO_DATA_PROVIDER               TYPE REF TO /IWBEP/IF_MGW_ENTRY_PROVIDER(optional)
-* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TS_RESULT
+* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RE_01_MPC=>TS_RESULT
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -146,7 +145,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
 
     DATA o_rowtype TYPE REF TO cl_abap_structdescr.
-    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->ddic_table ).
 
     DATA ref_wa TYPE REF TO data.
     CREATE DATA ref_wa TYPE HANDLE o_rowtype.
@@ -204,7 +203,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * --- all dynamic insert
     TRY.
 
-        INSERT INTO (me->model) VALUES <fsym_warea>.
+        INSERT INTO (me->ddic_table) VALUES <fsym_warea>.
 
       CATCH cx_root.
         RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
@@ -213,7 +212,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_DELETE_ENTITY
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->RESULTSET_DELETE_ENTITY
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -228,7 +227,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
 
     DATA o_rowtype TYPE REF TO cl_abap_structdescr.
-    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->ddic_table ).
 
     DATA ref_wa TYPE REF TO data.
     CREATE DATA ref_wa TYPE HANDLE o_rowtype.
@@ -286,7 +285,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * --- all dynamic delete
     TRY.
 
-        DELETE (me->model) FROM <fsym_warea>.
+        DELETE (me->ddic_table) FROM <fsym_warea>.
 
       CATCH cx_root.
         RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
@@ -295,7 +294,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_GET_ENTITY
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->RESULTSET_GET_ENTITY
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -304,7 +303,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [--->] IO_REQUEST_OBJECT              TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY(optional)
 * | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY(optional)
 * | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
-* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TS_RESULT
+* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RE_01_MPC=>TS_RESULT
 * | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_ENTITY_CNTXT
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
@@ -313,7 +312,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
 
     DATA o_rowtype TYPE REF TO cl_abap_structdescr.
-    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->ddic_table ).
 
     DATA ref_wa TYPE REF TO data.
     CREATE DATA ref_wa TYPE HANDLE o_rowtype.
@@ -355,7 +354,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * --- all dynamic retrieve
     TRY.
 
-        SELECT SINGLE * FROM (me->model) INTO <fsym_warea> WHERE (it_where).
+        SELECT SINGLE * FROM (me->ddic_table) INTO <fsym_warea> WHERE (it_where).
         IF sy-subrc NE 0.
           RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception.
         ENDIF.
@@ -371,7 +370,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
     ELSE.
-      er_entity-model = me->model.
+      er_entity-ddic_table = me->ddic_table.
       er_entity-field = <fs_ddfield>-fieldname.
       er_entity-value = <fsym_field>.
       SHIFT er_entity-value LEFT DELETING LEADING space.
@@ -381,7 +380,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_GET_ENTITYSET
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->RESULTSET_GET_ENTITYSET
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -394,7 +393,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [--->] IV_FILTER_STRING               TYPE        STRING
 * | [--->] IV_SEARCH_STRING               TYPE        STRING
 * | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
-* | [<---] ET_ENTITYSET                   TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TT_RESULT
+* | [<---] ET_ENTITYSET                   TYPE        ZCL_ZABAP_ACTIVE_RE_01_MPC=>TT_RESULT
 * | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
@@ -443,7 +442,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     ENDLOOP.
 
     " Get the structure of the table.
-    ref_table_des ?= cl_abap_typedescr=>describe_by_name( me->model ).
+    ref_table_des ?= cl_abap_typedescr=>describe_by_name( me->ddic_table ).
     idetails[] = ref_table_des->components[].
 
     LOOP AT idetails INTO xdetails.
@@ -485,7 +484,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     TRY.
         SELECT (it_fields)
         INTO TABLE <dyn_table>
-        FROM (me->model)
+        FROM (me->ddic_table)
         WHERE (it_where).
       CATCH cx_root.
 
@@ -502,7 +501,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
           EXIT.
         ELSE.
           APPEND INITIAL LINE TO et_entityset ASSIGNING <fs_entity>.
-          <fs_entity>-model = me->model.
+          <fs_entity>-ddic_table = me->ddic_table.
 
           READ TABLE it_fields ASSIGNING <fs_parameter> INDEX lv_index.
           CHECK sy-subrc EQ 0.
@@ -517,7 +516,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Protected Method ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT->RESULTSET_UPDATE_ENTITY
+* | Instance Protected Method ZCL_ZABAP_ACTIVE_RE_01_DPC_EXT->RESULTSET_UPDATE_ENTITY
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
@@ -526,7 +525,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_U(optional)
 * | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
 * | [--->] IO_DATA_PROVIDER               TYPE REF TO /IWBEP/IF_MGW_ENTRY_PROVIDER(optional)
-* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RECOR_MPC=>TS_RESULT
+* | [<---] ER_ENTITY                      TYPE        ZCL_ZABAP_ACTIVE_RE_01_MPC=>TS_RESULT
 * | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
 * | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -535,7 +534,7 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_filter> LIKE LINE OF me->filter.
 
     DATA o_rowtype TYPE REF TO cl_abap_structdescr.
-    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->model ).
+    o_rowtype ?= cl_abap_typedescr=>describe_by_name( me->ddic_table ).
 
     DATA ref_wa TYPE REF TO data.
     CREATE DATA ref_wa TYPE HANDLE o_rowtype.
@@ -593,11 +592,12 @@ CLASS ZCL_ZABAP_ACTIVE_RECOR_DPC_EXT IMPLEMENTATION.
 * --- all dynamic update
     TRY.
 
-        UPDATE (me->model) FROM <fsym_warea>.
+        UPDATE (me->ddic_table) FROM <fsym_warea>.
 
       CATCH cx_root.
         RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception.
     ENDTRY.
 
   ENDMETHOD.
+
 ENDCLASS.

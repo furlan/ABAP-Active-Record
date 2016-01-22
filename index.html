@@ -6,131 +6,174 @@
 		<title>ABAP Active Record Demo - v.1.0</title>
 
 		<script
-				src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
+				src="./openui5-runtime-1.32.7/resources/sap-ui-core.js"    
 				id="sap-ui-bootstrap"
 				data-sap-ui-libs="sap.ui.commons, sap.ui.table"
-				//data-sap-ui-theme="sap_bluecrystal"
 				data-sap-ui-theme="sap_goldreflection"
 				data-sap-ui-language="en">
 		</script>
-		<!-- add sap.ui.table,sap.ui.ux3 and/or other libraries to 'data-sap-ui-libs' if required -->
-
-		<script
-				src="abapar.js"/>
-		</script>
 
 		<script>
-            sap.ui.require(['./aarModel'], function(aarModel) {
+			/*global sap*/
+			/*global abapActiveRecord*/
+			
+			/**
+			 * It's just to show all functionalties of ABAP Active Record.
+			 * You will find bellow how to use it to execute CRUD operations in SFLIGHT table
+			 */
 
-                  // instantiate a Something and call foo() on it
-                    //new Something().foo();
-                    
-
-                });
-			var aarServiceUri = "http://abap101.ddns.net:50000/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV";
-
-			var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
-
-			var oFlightsTable = oFlightModel.retrieveSet(["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});
-
+			// Load resources
+			sap.ui.localResources('abapActiveRecord');  
+			jQuery.sap.require("abapActiveRecord.ARModel");  
+			
+			// create ABAP Active Record model
+			// Note that URI is not informed. It's defined in the abapar.json file.
+			var oARModel = new abapActiveRecord.ARModel();
+			
+			
+			//--->{ READ OPERATION (entity set)
+			
+			/** Execute the equivalent Open SQL command:
+			 * SELECT CARRID CONNID FLDATE PRICE FROM SFLIGHT WHERE CARRID = 'LH' AND CONNID = '2402'.
+			 * 
+			 */
+			var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});
+			
 			var oTable  = new sap.ui.table.Table({
-				title: "Display Table: " + oFlightModel.getModel(),
+				title: "Display Table: SFLIGHT",
 				width: "1000px",
 				visibleRowCount: 10
 			});
-
-
+			
 			var fieldName = "";
-			for (fieldName in oFlightsTable.getProperty("/" + oFlightModel.getModel() + "/0")) {
-
+			for (fieldName in oFlightsTable.getProperty("/SFLIGHT/0")) {
+				
 				oTable.addColumn(new sap.ui.table.Column({
 					label: new sap.ui.commons.Label({text: fieldName}),
 					template: new sap.ui.commons.TextField().bindProperty("value", fieldName),
 				}));
-
-			};
-
-
+				
+			}
+			
 			oTable.setModel(oFlightsTable);
-			oTable.bindRows("/" + oFlightModel.getModel());
+			oTable.bindRows("/SFLIGHT");
 			oTable.placeAt("content");
-
-
-
+			
+			// }<---
+			
+			//--->{ CREATE OPERATION
+			
+			/** Execute the equivalent Open SQL command:
+			 * INSERT INTO SFLIGHT VALUES wa.
+			 * 
+			 * wa: working area with follow values:
+			 * 		CARRID = 'LH'
+			 * 		CONNID = 2402
+			 * 		FLDATE = 20160119
+			 * 		PRICE  = 500
+			 * 
+			 */
 			var oCreate = new sap.ui.commons.Button({
 				text: "New Flight",
 				press: function() {
-					var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
-					oFlightModel.create({carrid: "LH", connid: "2402", fldate: "20151215", price: "500.00"});
+					oARModel.aarCreate('SFLIGHT', {carrid: "LH", connid: "2402", fldate: "20160119", price: "500.00"});
 				},
 			});
-
+			
 			oCreate.placeAt("content");
-
-
+			// }<---
+			
+			//--->{ READ OPERATION
+			
+			/** Execute the equivalent Open SQL command:
+			 *  SELECT SINGLE PRICE FROM SFLIGHT INTO wa 
+			 * 		WHERE 
+			 * 			CARRID = 'LH' AND
+			 * 			CONNID = 2402 AND
+			 * 			FLDATE = 20160119.
+			 * 
+			 */
 			var oFormRead = new sap.ui.layout.form.SimpleForm({
-				width: "1000px",
-				title: "Read Price",
+			title: "Read Price",
 				content: [
-					new sap.ui.commons.Label({text: "Airline ID:"}),
-				    new sap.ui.commons.TextField("carrid", {value: "LH"}),
-					new sap.ui.commons.Label({text: "Connection ID:"}),
-				    new sap.ui.commons.TextField("connid", {value: "2402"}),
-					new sap.ui.commons.Label({text: "Flight Date:"}),
-				    new sap.ui.commons.TextField("fldate", {value: "20151215"}),
-					new sap.ui.commons.Label({text: "Price:"}),
-				    new sap.ui.commons.TextField("price", {editable: false}),
-					new sap.ui.commons.Label({text: ""}),
+					new sap.ui.commons.Label({text: "Airline ID:"}), 
+				    new sap.ui.commons.TextField("carrid", {value: "LH"}), 
+					new sap.ui.commons.Label({text: "Connection ID:"}), 
+				    new sap.ui.commons.TextField("connid", {value: "2402"}), 
+					new sap.ui.commons.Label({text: "Flight Date:"}), 
+				    new sap.ui.commons.TextField("fldate", {value: "20160119"}), 
+					new sap.ui.commons.Label({text: "Price:"}), 
+				    new sap.ui.commons.TextField("price", {editable: false}), 
+					new sap.ui.commons.Label({text: ""}), 
 					new sap.ui.commons.Button({
 						text: "Read",
 						press: function() {
-							var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
-							var value = oFlightModel.getSingleValue("PRICE", {
-								carrid: sap.ui.getCore().byId("carrid").getValue(),
-								connid: sap.ui.getCore().byId("connid").getValue(),
+							var value = oARModel.aarGetEntity("SFLIGHT", "PRICE", {
+								carrid: sap.ui.getCore().byId("carrid").getValue(), 
+								connid: sap.ui.getCore().byId("connid").getValue(), 
 								fldate: sap.ui.getCore().byId("fldate").getValue()
 							});
 						sap.ui.getCore().byId("price").setValue(value)	;
 						},
 					}),
 				]
-
+			
 			})
-
+			
 			oFormRead.placeAt("content");
-
+			// }<---
+			
+			//--->{ UPDATE OPERATION
+			
+			/** Execute the equivalent Open SQL command:
+			 *   UPDATE SFLIGHT FROM wa.
+			 * 
+			 * wa: working area with follow values:
+			 * 		CARRID = 'LH'
+			 * 		CONNID = 2402
+			 * 		FLDATE = 20160119
+			 * 		PRICE  = <user value>
+			 * 
+			 */
 			var oForm = new sap.ui.layout.form.SimpleForm({
-				width: "1000px",
 				title: "Change Price",
 				content: [
-					new sap.ui.commons.Label("newPriceLabel", {text: "New Price:"}),
-				    new sap.ui.commons.TextField("newPrice"),
-					new sap.ui.commons.Label({text: ""}),
+					new sap.ui.commons.Label("newPriceLabel", {text: "New Price:"}), 
+				    new sap.ui.commons.TextField("newPrice"), 
+					new sap.ui.commons.Label({text: ""}), 
 					new sap.ui.commons.Button({
 						text: "Change",
 						press: function() {
-							var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
-							oFlightModel.update({carrid: "LH", connid: "2402", fldate: "20151215", price: sap.ui.getCore().byId("newPrice").getValue()});
+							oARModel.aarUpdate("SFLIGHT", {carrid: "LH", connid: "2402", fldate: "20160119", price: sap.ui.getCore().byId("newPrice").getValue()});
 						},
 					}),
 				]
-
-			})
-
+			
+			});
+						
 			oForm.placeAt("content");
-
-
-
+			// }<---
+			
+			//--->{ UPDATE OPERATION
+			
+			/** Execute the equivalent Open SQL command:
+			 *   DELETE SFLIGHT FROM wa.
+			 * 
+			 * wa: working area with follow values:
+			 * 		CARRID = 'LH'
+			 * 		CONNID = 2402
+			 * 		FLDATE = 20160119
+			 * 
+			 */
 			var oDelete = new sap.ui.commons.Button({
 				text: "Delete Flight",
 				press: function() {
-					var oFlightModel = new aarModel(aarServiceUri, 'SFLIGHT');
-					oFlightModel.destroy({carrid: "LH", connid: "2402", fldate: "20151215"});
+					oARModel.aarDelete('SFLIGHT', {carrid: "LH", connid: "2402", fldate: "20160119"});
 				},
 			});
-
+			
 			oDelete.placeAt("content");
-
+			// }<---
 
 		</script>
 
@@ -140,3 +183,4 @@
 		<div id="content"></div>
 	</body>
 </html>
+
