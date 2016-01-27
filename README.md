@@ -52,11 +52,11 @@ The JSON model will be like bellow:
 
 Read a single value from a specific record at table SFLIGHT (select single):
 
-`var value = oARModel.aarGetSingleValue("SFLIGHT", "PRICE", {`
-								`carrid: sap.ui.getCore().byId("carrid").getValue(),` 
-								`connid: sap.ui.getCore().byId("connid").getValue(),` 
-								`fldate: sap.ui.getCore().byId("fldate").getValue()`
-							`});`
+	var value = oARModel.aarGetSingleValue("SFLIGHT", "PRICE", {
+									carrid: sap.ui.getCore().byId("carrid").getValue(), 
+									connid: sap.ui.getCore().byId("connid").getValue(), 
+									fldate: sap.ui.getCore().byId("fldate").getValue()
+								});
 
 Value of _PRICE_: "500.00".
 
@@ -98,16 +98,16 @@ It's necessary 8 requests in total for this example called in the same transacti
 
 Here is the return of **result** entity set method:
 
-`<model>SFLIGHT</model>`
-`<field>CARRID</field>`
-`<value>LH</value>`
-`<model>SFLIGHT</model>`
-`<field>CONNID</field>`
-`<value>2402</value>`
-`<model>SFLIGHT</model>`
-`<field>FLDATE</field>`
-`<value>08/21/1997</value>`
-`...`
+	<model>SFLIGHT</model>
+	<field>CARRID</field>
+	<value>LH</value>
+	<model>SFLIGHT</model>
+	<field>CONNID</field>
+	<value>2402</value>
+	<model>SFLIGHT</model>
+	<field>FLDATE</field>
+	<value>08/21/1997</value>
+	...
 
 ### SAPUI5
 
@@ -115,12 +115,12 @@ In the SAPUI5 side, class `sap.ui.model.odata.ODataModel` was extended to implem
 
 Here is the JSON Model returned by _aarGetEntitySet_ method call above:
 
-`{"SFLIGHT":[`
-`{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"},`
-`{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/22/1997","PRICE":"590,00"},`
-`{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/25/1997","PRICE":"490,00"},`
-`{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/30/1997","PRICE":"485,00"}`
-`]}`
+	{"SFLIGHT":[
+	{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"},
+	{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/22/1997","PRICE":"590,00"},
+	{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/25/1997","PRICE":"490,00"},
+	{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/30/1997","PRICE":"485,00"}
+	]}
 
 ### ABAP
 
