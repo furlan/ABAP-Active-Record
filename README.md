@@ -4,13 +4,15 @@ Inspired by the Ruby on Rails Active Record, I started to work on an idea to rep
 
 ## Motivation
 
-Imagine that you need to retreive all records for a given flight from SFLIGHT table. Later in the program you need to retrieve a set of materials from MARA table. Then some company code details from T001 table. Then reservation from SBOOK table. Then deliveries from LIKP table. If you are using SAP Gateway, you need to create a service for each one of those requests.
+Imagine that you need to retreive some records for a given sales order type from VBAK. Later in the program you need to retrieve a set of materials from MARA table. Then some company code details from T001 table. Then deliveries from LIKP table. If you are using SAP Gateway, you need to create a service for each one of those requests.
 
 In order to avoid to create a new SAP Gateway service for simple retrieval records from SAP tables, the ABAP Active Record give direct access into the SAP tables in a very simple way.
 
-## How it works
+It's not the objective of this project replace all programing at back-end, but avoid create new service for the "incidental" table access.
 
-Suppose that you need to retreive all records from SFLIGHT table for Lufthansa (LH) and connection 2402:
+## How It Works
+
+As example, suppose you need to retrieve all records from SFLIGHT table for Lufthansa (LH) and connection 2402:
 
 First, in SAPUI5 code create ABAP Active Record object:
 
@@ -20,7 +22,7 @@ Then, retrieve a data set (JSON) from ABAP Stack, choosing table, fields and fil
 
 `var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
-Repeat the same procedure for any other SAP table (SPFLI, MAKT, BKPF, T001W etc.)
+Repeat the same procedure for any other SAP table (SPFLI, MAKT, BKPF, T001W etc.). No auto-generate code is necessary. Just call proper methods with proper parameters.
 
 ## CRUD Methods
 
@@ -50,7 +52,7 @@ The JSON model will be like bellow:
 
 Read a single value from a specific record at table SFLIGHT (select single):
 
-`var value = oARModel.aarGetEntity("SFLIGHT", "PRICE", {`
+`var value = oARModel.aarGetSingleValue("SFLIGHT", "PRICE", {`
 								`carrid: sap.ui.getCore().byId("carrid").getValue(),` 
 								`connid: sap.ui.getCore().byId("connid").getValue(),` 
 								`fldate: sap.ui.getCore().byId("fldate").getValue()`
@@ -72,8 +74,6 @@ Delete a record in table SFLIGHT:
 
 `oARModel.aarDelete('SFLIGHT', {carrid: "LH", connid: "2402", fldate: "20160119"});`
 
-Record deleted.
-
 ## Under the Hood
 
 ### SAP Gateway
@@ -88,13 +88,13 @@ The whole transation is executed using batch processing.
 
 `var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
-For example, for the _aarGetEntitySet_ method above, it's necessary follow requests:
+For example, for the _aarGetEntitySet_ method call above, it's necessary follow requests:
 - first **request** (POST method) call to pass operation and SAP Table name;
 - 4 **request** (PUT method) calls to pass all 4 fields to be retrieved;
 - 2 **request** (PUT method) calls to pass 2 filter conditions and 
 - last **result** (GET method) call to retrieve all information from database selection.
 
-It's necessary 8 calls in total for this example, in the same transaction (batch).
+It's necessary 8 requests in total for this example called in the same transaction (batch).
 
 Here is the return of **result** entity set method:
 
@@ -109,7 +109,11 @@ Here is the return of **result** entity set method:
 `<value>08/21/1997</value>`
 `...`
 
-Here is the JSON Model returned by ABAP Active Record:
+### SAPUI5
+
+In the SAPUI5 side, class `sap.ui.model.odata.ODataModel` was extended to implemented methods for basic CRUD operations and return data in JSON format.
+
+Here is the JSON Model returned by _aarGetEntitySet_ method call above:
 
 `{"SFLIGHT":[`
 `{"CARRID":"LH","CONNID":"00002402","FLDATE":"08/21/1997","PRICE":"555,00"},`
@@ -140,7 +144,7 @@ Used in _aarDelete_ method (DELETE) and execute DELETE SQL command.
 
 - RESULTSET_GET_ENTITY
 
-Used in _aarGetEntity_ method (GET) and execute SELECT SINGLE SQL command.
+Used in _aarGetSingleValue_ method (GET) and execute SELECT SINGLE SQL command.
 
 - RESULTSET_GET_ENTITYSET
 
@@ -152,7 +156,7 @@ Used in _aarUpdate_ method (PUT) and execute UPDATE SQL command.
 
 ### Sequence Calls
 
-Just as an example, here is the sequence calls to retrieve a set of records for SFLIGHT table:
+Just as an example, here is the sequence of calls necessary to retrieve a set of records for SFLIGHT table:
 
 `var oFlightsTable = oARModel.aarGetEntitySet('SFLIGHT', ["CARRID", "CONNID", "FLDATE", "PRICE"], {carrid: "LH", connid: "2402"});`
 
@@ -162,8 +166,27 @@ Just as an example, here is the sequence calls to retrieve a set of records for 
 4. At the end of processing, call RESULTSET_GET_ENTITYSET to execute a dynamic SELECT command and return the entityset with a list of all fields.
 5. On the SAPUI5 side, `ARModel` class provide all services, include to translate the format returned from **result** entity type to JSON format.
 
+## Installation
+
+You can find installation instructions in [this guide](https://github.com/furlan/ABAP-Active-Record/wiki/Installation-Guide).
+
 ## Feedback
 
-I started this project to share my idea and the initial proof of concept. It's not ready to be used in production, but just to give an idea and receive feedback from the community.
+It's not ready to be used in production, but just to give an idea and receive feedback from the community.
 
 For questions/comments/bugs/feature requests/wishes please create an [issue](https://github.com/furlan/ABAP-Active-Record/issues).
+
+## Next Steps
+
+Depending on community feedback, here is a list of new features to be implemented:
+
+- Redesign batch calls to decrease size of payloads.
+- Improve error handling.
+- Unit Tests
+- Allow ranges.
+- Allow joins.
+- Allow selects in diferent servers (via RFC).
+- Return in OData format.
+- Allow more complex WHERE conditions.
+
+

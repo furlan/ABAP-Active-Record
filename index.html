@@ -108,7 +108,7 @@
 					new sap.ui.commons.Button({
 						text: "Read",
 						press: function() {
-							var value = oARModel.aarGetEntity("SFLIGHT", "PRICE", {
+							var value = oARModel.aarGetSingleValue("SFLIGHT", "PRICE", {
 								carrid: sap.ui.getCore().byId("carrid").getValue(), 
 								connid: sap.ui.getCore().byId("connid").getValue(), 
 								fldate: sap.ui.getCore().byId("fldate").getValue()

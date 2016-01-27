@@ -298,7 +298,7 @@ sap.ui.model.odata.ODataModel.extend("abapActiveRecord.ARModel", /** @lends abap
     	// Initiate all variables and objects.
     	this._init(ddicTable);
     	
-    	//--->{ Start batch processing, all batch operations and submit:
+    	//--->{ Start batch processin, all batch operations and submit:
         this._batchRequestStart('aarGetEntitySet');
         
     	this._addFieldsListBatchChanges(fieldsList);
@@ -353,7 +353,7 @@ sap.ui.model.odata.ODataModel.extend("abapActiveRecord.ARModel", /** @lends abap
      * 
      * @public
      */
-    aarGetEntity: function(ddicTable,fieldSingleValue,fieldsValues) {
+    aarGetSingleValue: function(ddicTable,fieldSingleValue,fieldsValues) {
         
     	// Initiate all variables and objects.
     	this._init(ddicTable);
