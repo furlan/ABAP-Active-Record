@@ -4,11 +4,14 @@
     io_data_provider->read_entry_data( IMPORTING es_data = ls_request_input_data ).
     er_entity = ls_request_input_data.
 
-    FIELD-SYMBOLS: <fs_parameters> LIKE LINE OF me->parameters.
+    DATA lv_parameter TYPE string.
+    lv_parameter = ls_request_input_data-parameter.
 
     " add field or parameter in to internal table to use in Open SQL operation.
+    FIELD-SYMBOLS: <fs_parameters> LIKE LINE OF me->parameters.
     APPEND INITIAL LINE TO me->parameters ASSIGNING <fs_parameters>.
-    <fs_parameters>-parameter_line = ls_request_input_data-parameter.
-
+    <fs_parameters>-parameter_type = lv_parameter(1).
+    SHIFT lv_parameter LEFT BY 1 PLACES.
+    <fs_parameters>-parameter_line = lv_parameter.
 
   ENDMETHOD.

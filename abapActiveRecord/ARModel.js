@@ -34,11 +34,32 @@ sap.ui.model.odata.ODataModel.extend("abapActiveRecord.ARModel", /** @lends abap
     aBatchRead: [],
     
     /**
+     * JSON Model from configuration file
+     */
+    oConfigJSON: new sap.ui.model.json.JSONModel(),
+    
+    /**
      * Redefine super constructor in order to use URI based in the configuration file.
      */
     constructor: function(sServiceUrl, bJSON, sUser, sPassword, mHeaders, bTokenHandling, bWithCredentials, bLoadMetadataAsync){
         arguments = [this._getServiceUri()];
         sap.ui.model.odata.ODataModel.apply(this, arguments);
+    },
+    
+    /**
+     * Returns configuratin parameter value.
+     * 
+     * @param {string} configParameter Configuration parameter
+     * 
+     * @returns {string} Configuration value
+     */
+    _getConfiguration: function(configParameter) {
+
+        if (this.oConfigJSON.getJSON() === "{}"){
+            this.oConfigJSON.loadData('./abapActiveRecord/abapar.json', '', false);
+        }
+        
+        return this.oConfigJSON.getProperty('/' + configParameter);
     },
     
     /**
@@ -61,10 +82,8 @@ sap.ui.model.odata.ODataModel.extend("abapActiveRecord.ARModel", /** @lends abap
      * 
      */
     _getServiceUri: function() {
-        var oConfigJSON = new sap.ui.model.json.JSONModel();
-	    oConfigJSON.loadData('./abapActiveRecord/abapar.json', '', false);
-	    var actualEnvironment = oConfigJSON.getProperty('/actualEnvironment');
-		return oConfigJSON.getProperty('/serviceURIs/0/' + actualEnvironment);
+	    var actualEnvironment = this._getConfiguration('actualEnvironment');
+		return this._getConfiguration('serviceURIs/0/' + actualEnvironment);
     },
     
     /**
@@ -102,9 +121,27 @@ sap.ui.model.odata.ODataModel.extend("abapActiveRecord.ARModel", /** @lends abap
      * @private
      */
     _addFieldsListBatchChanges: function(fieldsList) {
+        var fieldListString = this._getConfiguration('parametersConstants/0/fieldParamID');
+        
+        // Get parameters values from configuration file
+        var parameterSeparator = this._getConfiguration('parametersConstants/0/parameterSeparator');
+        var parameterMaxSize = this._getConfiguration('parametersConstants/0/parameterMaxSize');
+        
         for (var i = 0; i < fieldsList.length; i++) {
-    		this._addBatchRequestParameter(fieldsList[i]);
+    		
+    		// Does field list string full? Add batch request. 
+    		if ((fieldListString.length + fieldsList[i].length + parameterSeparator.length) >= parameterMaxSize) {
+    		   this._addBatchRequestParameter(fieldListString);
+    		   // initiate field list string
+    		   fieldListString = this._getConfiguration('parametersConstants/0/fieldParamID');
+    		}
+    		
+    		fieldListString += fieldsList[i] + parameterSeparator;
     	}
+    	
+    	// Add batch request for remain field(s)
+    	this._addBatchRequestParameter(fieldListString);
+    	
     },
 
     /**
@@ -116,15 +153,28 @@ sap.ui.model.odata.ODataModel.extend("abapActiveRecord.ARModel", /** @lends abap
      */
     _addWhereConditionsBatchChanges: function(filterCondition) {
         var field;
-    	var whereConditions = [];
+    	var whereCondition = "";
+    	var whereConditionsString = this._getConfiguration('parametersConstants/0/whereParamID');
     	
+    	// Get parameters values from configuration file
+        var parameterSeparator = this._getConfiguration('parametersConstants/0/parameterSeparator');
+        var parameterMaxSize = this._getConfiguration('parametersConstants/0/parameterMaxSize');
+
     	for (field in filterCondition) {
-    		whereConditions.push(field + " EQ '" + filterCondition[field] + "'");
+
+    		whereCondition = field + " EQ '" + filterCondition[field] + "'";
+    		
+    		if ((whereConditionsString.length + whereCondition.length + parameterSeparator.length) >= parameterMaxSize) {
+    		   this._addBatchRequestParameter(whereConditionsString);
+    		   // initiate where list string
+    		   whereConditionsString = this._getConfiguration('parametersConstants/0/whereParamID');
+    		}
+    		
+    		whereConditionsString += whereCondition + parameterSeparator;
     	}
-    
-    	for (var i = 0; i < whereConditions.length; i++) {
-    		this._addBatchRequestParameter(whereConditions[i]);
-    	}
+    	
+    	// Add batch request for remain where condition(s)
+    	this._addBatchRequestParameter(whereConditionsString);
     },
     
     /**

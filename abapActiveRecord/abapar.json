@@ -4,5 +4,11 @@
 		"development": "http://abap101.ddns.net:50000/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV",
 		"quality": "http://abap101.ddns.net:50000/sap/opu/odata/sap/ZABAP_ACTIVE_RECORD_SRV",
 		"production": "#"
-	}]
+		}],
+	"parametersConstants": [{
+		"parameterSeparator": "|",
+		"parameterMaxSize": "255",
+		"fieldParamID": "F",
+		"whereParamID": "W"
+		}]
 }
