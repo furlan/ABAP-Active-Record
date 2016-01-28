@@ -1,7 +1,7 @@
   types:
     BEGIN OF ty_parameter,
         parameter_type type c LENGTH 1,
-        parameter_line TYPE c LENGTH 100,
+        parameter_line TYPE c LENGTH 255,
       END OF ty_parameter .
   types:
     ty_t_parameters TYPE TABLE OF ty_parameter .
