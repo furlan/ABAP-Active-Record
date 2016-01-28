@@ -182,10 +182,11 @@ Depending on community feedback, here is a list of new features to be implemente
 
 - Redesign batch calls to decrease size of payloads.
 - Improve error handling.
+- Users guide.
 - Unit Tests
 - Allow ranges.
 - Allow joins.
-- Allow selects in diferent servers (via RFC).
+- Allow selects in different servers (via RFC).
 - Return in OData format.
 - Allow more complex WHERE conditions.
 
